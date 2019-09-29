@@ -25,13 +25,13 @@ def open_icon_map(iconfn):
     import gtk
 
     if not os.path.exists(iconfn):
-        print "Icon file %s not found" % iconfn
+        print(f"Icon file {iconfn} not found")
         return None
     
     try:
         return gtk.gdk.pixbuf_new_from_file(iconfn)
-    except Exception, e:
-        print "Error opening icon map %s: %s" % (iconfn, e)
+    except Exception as err:
+        print(f"Error opening icon map {iconfn}: {err}")
         return None
 
 ICON_MAPS = None
@@ -52,16 +52,16 @@ def hexprint(data):
     line_sz = 8
     csum = 0
 
-    lines = len(data) / line_sz
+    lines = len(data) // line_sz
     
     if (len(data) % line_sz) != 0:
         lines += 1
         data += "\x00" * ((lines * line_sz) - len(data))
         
-    for i in range(0, (len(data)/line_sz)):
+    for i in range(0, (len(data) // line_sz)):
 
 
-        print "%03i: " % (i * line_sz),
+        print(f"{i * line_sz:03d}: ", end='')
 
         left = len(data) - (i * line_sz)
         if left < line_sz:
@@ -70,21 +70,21 @@ def hexprint(data):
             limit = line_sz
             
         for j in range(0,limit):
-            print "%02x " % ord(data[(i * line_sz) + j]),
+            print(f"{ord(data[(i * line_sz) + j]):02x} ", end='')
             csum += ord(data[(i * line_sz) + j])
             csum = csum & 0xFF
 
-        print "  ",
+        print("  ", end='')
 
         for j in range(0,limit):
             char = data[(i * line_sz) + j]
 
             if ord(char) > 0x20 and ord(char) < 0x7E:
-                print "%s" % char,
+                print(f"{char}", end='')
             else:
-                print ".",
+                print(".", end='')
 
-        print ""
+        print("")
 
     return csum
 
@@ -103,8 +103,8 @@ def run_safe(f):
     def runner(*args, **kwargs):
         try:
             return f(*args, **kwargs)
-        except Exception, e:
-            print "<<<%s>>> %s" % (f, e)
+        except Exception as err:
+            print(f"<<<{f}>>> {err}")
             return None
 
     return runner
@@ -116,7 +116,7 @@ def run_gtk_locked(f):
         gtk.gdk.threads_enter()
         try:
             f(*args, **kwargs)
-        except Exception, e:
+        except Exception as err:
             gtk.gdk.threads_leave()
             raise
 
@@ -131,9 +131,9 @@ def run_or_error(f):
     def runner(*args, **kwargs):
         try:
             f(*args, **kwargs)
-        except Exception, e:
+        except Exception as err:
             log_exception()
-            main_common.display_error(_("An error occurred: ") + str(e))
+            main_common.display_error(f"{_('An error occurred: ')}{err}")
 
     return runner
 
@@ -173,23 +173,28 @@ def get_icon(key):
         elif key[0] == "\\":
             set = "\\"
         else:
-            print "Unknown APRS symbol table: %s" % key[0]
+            print(f"Unknown APRS symbol table: {key[0]}")
             return None
 
         key = key[1]
     elif len(key) == 1:
         set = "/"
     else:
-        print "Unknown APRS symbol: `%s'" % key
+        print(f"Unknown APRS symbol: `{key}'")
         return None
 
     try:
         return get_icon_from_map(ICON_MAPS[set], key)
-    except Exception, e:
-        print "Error cutting icon %s: %s" % (key, e)
+    except Exception as er:
+        print(f"Error cutting icon {key}: {err}")
         return None
 
-class NetFile(file):
+#class NetFile(file):
+class NetFile():
+    """ Creates a custom file object for network connections
+        This class is incompatible with Python 3 and a different approach is rqeuired.
+        We will cross this bridge when we come to it.
+    """
     def __init__(self, uri, mode="r", buffering=1):
         self.__fn = uri
         self.is_temp = False
@@ -202,11 +207,15 @@ class NetFile(file):
                 self.__fn = tmpf.name
                 tmpf.close()
 
-                print "Retrieving %s -> %s" % (uri, self.__fn)
+                print(f"Retrieving {uri} -> {self.__fn}")
                 urllib.urlretrieve(uri, self.__fn)
                 break
         
         file.__init__(self, self.__fn, mode, buffering)
+
+
+    def __init__(self, uri, mode="r", buffering=1):
+        assert False, "Netfile in utils.py must be replaced"
 
     def close(self):
         file.close(self)
@@ -245,9 +254,9 @@ def log_exception():
         import traceback
         import sys
 
-        print "-- Exception: --"
+        print("-- Exception: --")
         traceback.print_exc(limit=30, file=sys.stdout)
-        print "------"
+        print("------")
 
 def set_entry_hint(entry, hint, default_focused=False):
     import gtk
@@ -308,6 +317,6 @@ def dict_rev(target_dict, key):
     for k,v in target_dict.items():
         reverse[v] = k
 
-    print "Reversed dict: %s" % reverse
+    print("Reversed dict: {reverse}")
 
     return reverse[key]

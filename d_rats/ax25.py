@@ -1,3 +1,6 @@
+""" ax25.py: Provides a bit stuffing function for the AX.25 protocol
+"""
+
 bstr_pos = lambda n: n>0 and bstr_pos(n>>1)+str(n&1) or ''
 
 class BitStuffContext:
@@ -18,15 +21,15 @@ class BitStuffContext:
             self.ones += 1
         else:
             self.ones = 0
-        print "Register: %s" % bstr_pos(self.register)
+        print(f"Register: {bstr_pos(self.register)}")
         self.bits += 1
         if self.bits == 8:
-            print "Pushing"
+            print("Pushing")
             self.push()
 
     def store_bit(self, bit):
         if bit and self.ones == 5:
-            print "Stuffing!"
+            print("Stuffing!")
             self._store_bit(0)
         self._store_bit(bit)
 
@@ -50,8 +53,8 @@ if __name__ == "__main__":
 
     data = "\xFF\xFF\xFF"
 
-    print "Start:"
+    print("Start:")
     hexprint(data)
 
-    print "\nStuffed:"
+    print("\nStuffed:")
     hexprint(bitstuff(data))
