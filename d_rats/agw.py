@@ -13,10 +13,10 @@ class AGWFrame:
         self.res1 = self.res2 = self.res3 = 0
         self.res4 = self.res5 = self.res6 = 0
         self.pid = 0
-        self.call_from = b'          '
-        self.call_to = b'          '
+        self.call_from = '          '
+        self.call_to = '          '
         self.len = 0
-        self.payload = b''
+        self.payload = ''
 
     def packed(self):
         p = struct.pack("BBBBBBBB10s10sII",
@@ -26,11 +26,12 @@ class AGWFrame:
                         self.res4,
                         self.pid,
                         self.res5,
-                        self.call_from, self.call_to,
+                        bytes(self.call_from, 'ascii'),
+                        bytes(self.call_to, 'ascii'),
                         self.len,
                         self.res6)
 
-        return p + self.payload
+        return p + bytes(self.payload, 'ascii')
 
     def unpack(self, data):
         self.port,\
@@ -55,7 +56,7 @@ class AGWFrame:
             may be beneficial to use UTF-8 encoding. The len property is set to the length
             of the string
         """
-        self.payload = bytes(data, 'ascii')
+        self.payload = data
         self.len = len(self.payload)
 
     def get_payload(self):

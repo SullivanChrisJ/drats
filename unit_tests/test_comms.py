@@ -26,16 +26,46 @@ class test_agw(unittest.TestCase):
         """ Instantiate object and test the packed method on the default values  """
         import d_rats.agw
         agw_frame = d_rats.agw.AGWFrame()
-        self.assertEqual(agw_frame.packed(), 8*b'\x00'+2*10*b' '+8*b'\x00', "'packed; method returned incorrect value")
-
+        self.assertEqual(agw_frame.packed(), 8*b'\x00'+2*10*b' '+8*b'\x00', "'packed' method returned incorrect value")
+        
     def test_agw_set_payload(self):
         import d_rats.agw
         agw_frame = d_rats.agw.AGWFrame()
         agw_payload = "FB OM I'm 47 Y.O. ET work as movie*"
         agw_frame.set_payload(agw_payload)
         self.assertEqual(agw_frame.len, len(agw_payload), "AGWFRAME object returns incorrect length after 'set_payload'")
-        self.assertEqual(agw_frame.get_payload(), bytes(agw_payload, 'ascii'), 
-                         "AGWFRAME 'get_payload' returns incorrect value")
+        self.assertEqual(agw_frame.get_payload(), agw_payload, "AGWFRAME 'get_payload' returns incorrect value")
+
+    def test_agw_payload_packing(self):
+        """ Tests that when an agw payload is set that correct values are returned by the packed method.
+            The packed method will convert strings (call_from, call_to, payload) to a byte object. The
+            length field is set and encoded as a 32 bit integer. The encoding of the length field in this
+            test is limited to 255 byte strings.
+        """
+        import d_rats.agw
+        agw_frame = d_rats.agw.AGWFrame()
+        agw_payload = "FB OM I'm 47 Y.O. ET work as movie*"
+        agw_frame.set_payload(agw_payload)
+        print(agw_frame.packed())
+        self.assertEqual(agw_frame.packed(), 
+                         8*b'\x00'+2*10*b' '+bytes((len(agw_payload),))+bytes(7)+bytes(agw_payload, 'ascii'),
+                         "'packed' method returned incorrect value")        
+
+    def test_agw_call_signs(self):
+        import d_rats.agw
+        agw_frame = d_rats.agw.AGWFrame()
+        agw_frame.set_from('VE3NRT')
+        agw_frame.set_to('W1AW/KH6')
+        self.assertEqual(agw_frame.get_from(), 'VE3NRT\x00\x00\x00\x00', "agw.py: get_from() call sign is not the same as set_from")
+        self.assertEqual(agw_frame.get_to(), 'W1AW/KH6\x00\x00', "agw.py: get_from() call sign is not the same as set_from")
+
+    def test_agw_call_sign_packing(self):
+        import d_rats.agw
+        agw_frame = d_rats.agw.AGWFrame()
+        agw_frame.set_from('VE3NRT')
+        agw_frame.set_to('W1AW/KH6')
+        self.assertEqual(agw_frame.packed(), 8*b'\x00'+b'VE3NRT\x00\x00\x00\x00W1AW/KH6\x00\x00'+8*b'\x00',
+                         "packed call signs returned incorrect values")
 
 class test_ax25(unittest.TestCase):
     """ Test ax25.py. ax.25.py is dependent on utils.py for the hexprint function,
