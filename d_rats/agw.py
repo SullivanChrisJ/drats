@@ -12,11 +12,11 @@ class AGWFrame:
         self.port = 0
         self.res1 = self.res2 = self.res3 = 0
         self.res4 = self.res5 = self.res6 = 0
-        self.pid = 0;
-        self.call_from = "".ljust(10)
-        self.call_to = "".ljust(10)
+        self.pid = 0
+        self.call_from = b'          '
+        self.call_to = b'          '
         self.len = 0
-        self.payload = ""
+        self.payload = b''
 
     def packed(self):
         p = struct.pack("BBBBBBBB10s10sII",
@@ -28,9 +28,9 @@ class AGWFrame:
                         self.res5,
                         self.call_from, self.call_to,
                         self.len,
-                        self.res6);
+                        self.res6)
 
-        return p + self.payload;
+        return p + self.payload
 
     def unpack(self, data):
         self.port,\
@@ -41,7 +41,7 @@ class AGWFrame:
             self.res5, \
             self.call_from, self.call_to, \
             self.len, \
-            self.res6 = struct.unpack("BBBBBBBB10s10sII", data[:36]);
+            self.res6 = struct.unpack("BBBBBBBB10s10sII", data[:36])
 
         self.payload = data[36:]
         if len(self.payload) != self.len:
@@ -49,7 +49,13 @@ class AGWFrame:
                                 (self.len, len(self.payload)))
 
     def set_payload(self, data):
-        self.payload = data
+        """ Sets the payload property to bytes equivalent of the supplied string argument.
+            It may be necessary to extend this function for binary data, perhaps detecting
+            whether a bytes string was supplied and not applying the conversion. Also it 
+            may be beneficial to use UTF-8 encoding. The len property is set to the length
+            of the string
+        """
+        self.payload = bytes(data, 'ascii')
         self.len = len(self.payload)
 
     def get_payload(self):

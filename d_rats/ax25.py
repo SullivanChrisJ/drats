@@ -21,15 +21,15 @@ class BitStuffContext:
             self.ones += 1
         else:
             self.ones = 0
-        print(f"Register: {bstr_pos(self.register)}")
+#        print(f"Register: {bstr_pos(self.register)}")
         self.bits += 1
         if self.bits == 8:
-            print("Pushing")
+#            print("Pushing")
             self.push()
 
     def store_bit(self, bit):
         if bit and self.ones == 5:
-            print("Stuffing!")
+#            print("Stuffing!")
             self._store_bit(0)
         self._store_bit(bit)
 
