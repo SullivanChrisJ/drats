@@ -11,13 +11,16 @@ class test_utils(unittest.TestCase):
     def test_Python3_syntax(self):
         import d_rats.utils
 
-class test_agw(unittest.TestCase):
+class test_AGWFrame_class(unittest.TestCase):
 
     def test_Python3_syntax(self):
         import d_rats.agw
 
     def test_agw_frame_defs(self):
-        """ Test the functions listed in the AGW_FRAMES dictionary directly from the class """
+        """ Test the functions listed in the AGW_FRAMES dictionary directly from the class.
+            AGW_FRAMES is defined outside any class and each of the frame types is defined
+            in its own class
+        """
         import d_rats.agw
         for k, v in d_rats.agw.AGW_FRAMES.items():
             self.assertEqual(v.kind, ord(k), f"{v.__name__}.kind is {v.kind} but should be ord(k)")
@@ -46,7 +49,6 @@ class test_agw(unittest.TestCase):
         agw_frame = d_rats.agw.AGWFrame()
         agw_payload = "FB OM I'm 47 Y.O. ET work as movie*"
         agw_frame.set_payload(agw_payload)
-        print(agw_frame.packed())
         self.assertEqual(agw_frame.packed(), 
                          8*b'\x00'+2*10*b' '+bytes((len(agw_payload),))+bytes(7)+bytes(agw_payload, 'ascii'),
                          "'packed' method returned incorrect value")        
@@ -67,6 +69,21 @@ class test_agw(unittest.TestCase):
         self.assertEqual(agw_frame.packed(), 8*b'\x00'+b'VE3NRT\x00\x00\x00\x00W1AW/KH6\x00\x00'+8*b'\x00',
                          "packed call signs returned incorrect values")
 
+    def test_to_the_finish(self):
+        assert False, "Finish the tests for agw.py"
+
+class test_AGWConnection_class(unittest.TestCase):
+
+    def test_instantiation(self):
+        """ Opens a connection on port 8000. Right now, there's nothing to
+            catch it
+        """
+        from d_rats.agw import AGWConnection
+        port = 8000
+        agwc = AGWConnection('127.0.0.1', port, timeout=3)
+        agwc = AGWConnection('localhost', port, timeout=3)
+
+
 class test_ax25(unittest.TestCase):
     """ Test ax25.py. ax.25.py is dependent on utils.py for the hexprint function,
         which is only used for its stand-alone test in __main__.
@@ -86,6 +103,12 @@ class test_ax25(unittest.TestCase):
         self.assertEqual(ax25.bitstuff("\xAB\xCD"), "\xD5\xB3")
         # The following test fails - bitstuff returns 80 in the last byte 
         self.assertEqual(ax25.bitstuff("\xFE\xFD"), "\x7D\xDF\x40")
+
+
+class test_comm(unittest.TestCase):
+
+    def test_Python3_syntax(self):
+        import d_rats.comm as comm
 
 
 if __name__ == '__main__': 
