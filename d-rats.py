@@ -20,7 +20,10 @@ import os
 from optparse import OptionParser
 
 import traceback
-import gtk
+
+#import gtk
+import tkinter as tk
+
 
 sys.path.insert(0, os.path.join("/usr/share", "d-rats"))
 from d_rats import utils, spell
@@ -35,13 +38,13 @@ def handle_exception(exctyp, value, tb):
     if exctyp is KeyboardInterrupt or IGNORE_ALL:
         return original_excepthook(exctyp, value, tb)
 
-    gtk.gdk.pointer_ungrab()
-    gtk.gdk.keyboard_ungrab()
+#    gtk.gdk.pointer_ungrab()
+#    gtk.gdk.keyboard_ungrab()
 
     _trace = traceback.format_exception(exctyp, value, tb)
     trace = os.linesep.join(_trace)
 
-    print "---- GUI Exception ----\n%s\n---- End ----\n" % trace
+    print(f"---- GUI Exception ----\n{trace}\n---- End ----\n")
 
     msg = """
 <b><big>D-RATS has encountered an error.</big></b>
@@ -49,7 +52,7 @@ def handle_exception(exctyp, value, tb):
 This may be non-fatal, so you may click <b>Ignore</b> below to attempt to continue running.  Otherwise, click 'Quit' to terminate D-RATS now. If you are planning to file a bug for this issue, please click <b>Debug Log</b> below and include the contents in the bug tracker.
 
 If you need to ignore all additional warnings for this session, click <b>Ignore All</b>.  However, please reproduce and report the issue when possible.
-"""
+pyth"""
 
     def extra(dialog):
         dialog.add_button(_("Debug Log"), gtk.RESPONSE_HELP);

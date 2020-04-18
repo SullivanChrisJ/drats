@@ -2,11 +2,12 @@
     These are: agw.py, ax25.py, (more tbd)
 """
 
-import os
-
 import unittest
 
 class test_utils(unittest.TestCase):
+    """ Simple test here can be moved later to its own test module as it is not a communications
+        module. It is required here because it is imported at least one communications module.
+    """
 
     def test_Python3_syntax(self):
         import d_rats.utils
@@ -110,7 +111,25 @@ class test_comm(unittest.TestCase):
     def test_Python3_syntax(self):
         import d_rats.comm as comm
 
+    def test_kiss_escape_frame(self):
+        from d_rats.comm import kiss_escape_frame
+        # First a normal string
+        non_esc_string = "The quick brown fox jumps over the lazy dog"
+        self.assertEqual(non_esc_string, kiss_escape_frame(non_esc_string),
+                         "Function kiss_escape_frame should not modify string")
+        # Next one with a frame end byte in the middle
+        frame_end_string = "Frame \xC0 end"
+        self.assertEqual("Frame \xDB\xDC end", kiss_escape_frame(frame_end_string),
+                         "kiss_escape_frame did not process frame end correctly")
+        # Then a string with an escape character embedded
+        escape_string = "Escape \xDB sequence"
+        self.assertEqual("Escape \xDB\xDD sequence", kiss_escape_frame(escape_string),
+                         "kiss_escape_frame did not process escape sequence correctly")
+
 
 if __name__ == '__main__': 
-    print(os.path)
+    import os
+    import sys
+    print(os.getcwd())
+    sys.path.append(os.getcwd())
     unittest.main(warnings='ignore')
