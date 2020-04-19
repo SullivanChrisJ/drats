@@ -16,14 +16,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-import platform
+# Name collision with python standard module
+import d_rats.platform as platform
 import os
 
 debug_path = platform.get_platform().config_file("debug.log")
+# Fixme - 3 lines have been commented out for debugging purposes
 if sys.platform == "win32" or not os.isatty(0):
-    sys.stdout = file(debug_path, "w", 0)
-    sys.stderr = sys.stdout
-    print "Enabled debug log"
+#    sys.stdout = file(debug_path, "w", 0)
+#    sys.stdout = open(debug_path, "w")
+#    sys.stderr = sys.stdout
+    print("Enabled debug log")
 else:
     try:
         os.unlink(debug_path)
@@ -38,33 +41,34 @@ import re
 from threading import Thread, Lock
 from select import select
 import socket
-from commands import getstatusoutput
+# commands module has been retired. Indirect replacement with subprocesses
+#from commands import getstatusoutput 
 import glob
 import shutil
 import datetime
 
 import serial
-import gtk
-import gobject
+#import gtk
+#import gobject
 
-import mainwindow
-import config
-import gps
-import mapdisplay
-import map_sources
-import comm
-import sessionmgr
-import session_coordinator
-import emailgw
-import formgui
-import station_status
-import pluginsrv
-import msgrouting
-import wl2k
-import inputdialog
-import version
-import agw
-import mailsrv
+import d_rats.mainwindow
+import d_rats.config
+import d_rats.gps
+import d_rats.mapdisplay
+import d_rats.map_sources
+import d_rats.comm
+import d_rats.sessionmgr
+import d_rats.session_coordinator
+import d_rats.emailgw
+import d_rats.formgui
+import d_rats.station_status
+import d_rats.pluginsrv
+import d_rats.msgrouting
+import d_rats.wl2k
+import d_rats.inputdialog
+import d_rats.version
+import d_rats.agw
+import d_rats.mailsrv
 
 from ui import main_events
 
@@ -83,8 +87,8 @@ gobject.threads_init()
 def ping_file(filename):
     try:
         f = NetFile(filename, "r")
-    except IOError, e:
-        raise Exception("Unable to open file %s: %s" % (filename, e))
+    except IOError as e:
+        raise Exception("Unable to open file {filename}: {e}")
         return None
 
     data = f.read()
@@ -93,12 +97,20 @@ def ping_file(filename):
     return data
 
 def ping_exec(command):
-    s, o = getstatusoutput(command)
-    if s:
-        raise Exception("Failed to run command: %s" % command)
+    # (this function has been removed from python 3) s, o = getstatusoutput(command)
+    p = subprocess.Popen(command)
+    o, e = p.communicate()
+    #if s:
+    if p.returncode:
+        raise Exception(f"Failed to run command: {command}")
         return None
 
     return o    
+
+# Snippet to form replacement of above
+#    p = subprocess.Popen(*args, **kwargs)
+#    stdout, stderr = p.communicate()
+#    return p.returncode, stdout, stderr
 
 class CallList(object):
     def __init__(self):
@@ -169,17 +181,15 @@ class MainApp(object):
                     self.config.get("tcp_out", forward).split(",")
                 sport = int(sport)
                 dport = int(dport)
-            except Exception, e:
-                print "Failed to parse TCP forward config %s: %s" % (forward, e)
+            except Exception as e:
+                print(f"Failed to parse TCP forward config {forward}: {e}")
                 return
 
             try:
                 sc.create_socket_listener(sport, dport, station)
-                print "Started socket listener %i:%i@%s" % \
-                    (sport, dport, station)
-            except Exception, e:
-                print "Failed to start socket listener %i:%i@%s: %s" % \
-                    (sport, dport, station, e)
+                print(f"Started socket listener {sport}:{dport}@{station}")
+            except Exception as e:
+                print(f"Failed to start socket listener {port}:{dport}@{station}: {e}")
 
     def start_comms(self, portid):
         spec = self.config.get("ports", portid)
@@ -188,8 +198,8 @@ class MainApp(object):
             enb = (enb == "True")
             dosniff = (dosniff == "True")
             raw = (raw == "True")                   
-        except Exception, e:
-            print "Failed to parse portspec %s:" % spec
+        except Exception as e:
+            print(f"Failed to parse portspec {spec}:")
             log_exception()
             return
 
@@ -198,19 +208,19 @@ class MainApp(object):
                 del self.sm[name]
             return
 
-        print "Starting port %s (%s)" % (portid, name)
+        print(f"Starting port {portid} ({name})")
 
         call = self.config.get("user", "callsign")
 
         if self.__unused_pipes.has_key(port):
             path = self.__unused_pipes[port]
             del self.__unused_pipes[port]
-            print "Re-using path %s for port %s" % (path, port)
+            print(f"Re-using path {path} for port {port}")
         elif port.startswith("tnc-ax25:"):
-            print port
+            print(port)
             tnc, _port, tncport, path = port.split(":")
             path = path.replace(";", ",")
-            _port = "%s:%s" % (_port, tncport)
+            _port = f"{_port}:{tncport}"
             path = comm.TNCAX25DataPath((_port, int(rate), call, path))
         elif port.startswith("tnc:"):
             _port = port.replace("tnc:", "")
@@ -219,7 +229,7 @@ class MainApp(object):
             path = comm.SocketDataPath(("127.0.0.1", 20003, call, None))
         elif port.startswith("agwpe:"):
             path = comm.AGWDataPath(port, 0.5)
-            print "Opening AGW: %s" % path
+            print(f"Opening AGW: {path}")
         elif ":" in port:
             try:
                 (mode, host, sport) = port.split(":")
@@ -325,7 +335,7 @@ class MainApp(object):
         delay = False
 
         for portid in self.sm.keys():
-            print "Stopping %s" % portid
+            print(f"Stopping {portid}")
             if self.stop_comms(portid):
                 if sys.platform == "win32":
                     # Wait for windows to let go of the serial port
@@ -335,11 +345,11 @@ class MainApp(object):
             time.sleep(0.25)
 
         for portid in self.config.options("ports"):
-            print "Starting %s" % portid
+            print(f"Starting {portid}")
             self.start_comms(portid)
 
         for spec, path in self.__unused_pipes.items():
-            print "Path %s for port %s no longer needed" % (path, spec)
+            print(f"Path {path} for port {spec} no longer needed")
             path.disconnect()
 
         self.__unused_pipes = {}
@@ -353,12 +363,12 @@ class MainApp(object):
             lat = self.config.get("user", "latitude")
             lon = self.config.get("user", "longitude")
             alt = self.config.get("user", "altitude")
-        except Exception, e:
+        except Exception as e:
             import traceback
             traceback.print_exc(file=sys.stdout)
-            print "Invalid static position: %s" % e
+            print(f"Invalid static position: {e}")
 
-        print "Static position: %s,%s" % (lat,lon)
+        print(f"Static position: {lat},{lon}")
         return gps.StaticGPSSource(lat, lon, alt)
 
     def _refresh_gps(self):
@@ -366,7 +376,7 @@ class MainApp(object):
         rate = self.config.getint("settings", "gpsportspeed")
         enab = self.config.getboolean("settings", "gpsenabled")
 
-        print "GPS: %s on %s@%i" % (enab, port, rate)
+        print(f"GPS: {enab} on {port}@{rate}")
 
         if enab:
             if self.gps:
@@ -407,8 +417,8 @@ class MainApp(object):
                 smtpsrv = mailsrv.DRATS_SMTPServerThread(self.config)
                 smtpsrv.start()
                 self.mail_threads["SMTPSRV"] = smtpsrv
-        except Exception, e:
-            print "Unable to start SMTP server: %s" % e
+        except Exception as e:
+            print(f"Unable to start SMTP server: {e}")
             log_exception()
 
         try:
@@ -416,8 +426,8 @@ class MainApp(object):
                 pop3srv = mailsrv.DRATS_POP3ServerThread(self.config)
                 pop3srv.start()
                 self.mail_threads["POP3SRV"] = pop3srv
-        except Exception, e:
-            print "Unable to start POP3 server: %s" % e
+        except Exception as e:
+            print(f"Unable to start POP3 server: {e}")
             log_exception()
 
     def _refresh_lang(self):
@@ -427,11 +437,11 @@ class MainApp(object):
                     "Dutch" : "nl",
                     }
         locale = locales.get(self.config.get("prefs", "language"), "English")
-        print "Loading locale `%s'" % locale
+        print(f"Loading locale `{locale}'")
 
         localedir = os.path.join(platform.get_platform().source_dir(),
                                  "locale")
-        print "Locale dir is: %s" % localedir
+        print(f"Locale dir is: {localedir}")
 
         if not os.environ.has_key("LANGUAGE"):
             os.environ["LANGUAGE"] = locale
@@ -444,10 +454,10 @@ class MainApp(object):
             gtk.glade.bindtextdomain("D-RATS", localedir)
             gtk.glade.textdomain("D-RATS")
         except LookupError:
-            print "Unable to load language `%s'" % locale
+            print(f"Unable to load language `{locale}'")
             gettext.install("D-RATS")
-        except IOError, e:
-            print "Unable to load translation for %s: %s" % (locale, e)
+        except IOError as e:
+            print(f"Unable to load translation for {locale}: {e}")
             gettext.install("D-RATS")
 
     def _load_map_overlays(self):
@@ -462,20 +472,19 @@ class MainApp(object):
         for stype in source_types:
             try:
                 sources = stype.enumerate(self.config)
-            except Exception, e:
+            except Exception as e:
                 import utils
                 utils.log_exception()
-                print "Failed to load source type %s" % stype
+                print(f"Failed to load source type {stype}")
                 continue
 
             for sname in sources:
                 try:
                     source = stype.open_source_by_name(self.config, sname)
                     self.map.add_map_source(source)
-                except Exception, e:
+                except Exception as e:
                     log_exception()
-                    print "Failed to load map source %s: %s" % \
-                        (source.get_name(), e)
+                    print(f"Failed to load map source {source.get_name()}: {e}")
 
                 if sname == _("Stations"):
                     self.stations_overlay = source
@@ -494,7 +503,7 @@ class MainApp(object):
                                                               fn)
 
     def refresh_config(self):
-        print "Refreshing config..."
+        print("Refreshing config...")
 
         call = self.config.get("user", "callsign")
         gps.set_units(self.config.get("user", "units"))
@@ -530,7 +539,7 @@ class MainApp(object):
         try:
             comment = self.config.get("settings", "default_gps_comment")
             fix.APRSIcon = gps.dprs_to_aprs(comment);
-        except Exception, e:
+        except Exception as e:
             log_exception()
             fix.APRSIcon = "\?"
         self.__map_point.set_icon_from_aprs_sym(fix.APRSIcon)
@@ -582,13 +591,13 @@ class MainApp(object):
         self.mainwindow.set_status(status)
 
     def __user_stop_session(self, object, sid, port, force=False):
-        print "User did stop session %i (force=%s)" % (sid, force)
+        print(f"User did stop session {sid} (force={force})")
         try:
             sm, sc = self.sm[port]
             session = sm.sessions[sid]
             session.close(force)
-        except Exception, e:
-            print "Session `%i' not found: %s" % (sid, e)
+        except Exception as e:
+            print(f"Session `{sid}' not found: {e}")
     
     def __user_cancel_session(self, object, sid, port):
         self.__user_stop_session(object, sid, port, True)
@@ -623,8 +632,7 @@ class MainApp(object):
 
         for station in station_list:
             if station.get_port() not in stations.keys():
-                print "Station %s has unknown port %s" % (station,
-                                                          station.get_port())
+                print(f"Station {station} has unknown port {station.get_port()}")
             else:
                 stations[station.get_port()].append(station)
 
@@ -643,7 +651,7 @@ class MainApp(object):
         self.refresh_config()
 
     def __show_map_station(self, object, station):
-        print "Showing map"
+        print("Showing map")
         self.map.show()
 
     def __ping_station(self, object, station, port):
@@ -685,11 +693,11 @@ class MainApp(object):
                 return s
 
             try:
-                print "Creating a map source for %s" % station
+                print(f"Creating a map source for {station}")
                 s = map_sources.MapFileSource.open_source_by_name(self.config,
                                                                   station,
                                                                   True)
-            except Exception, e:
+            except Exception as e:
                 # Unable to create or add so use "Stations" overlay
                 return self.stations_overlay
 
@@ -699,8 +707,7 @@ class MainApp(object):
 
         if self.config.getboolean("settings", "timestamp_positions"):
             source = source_for_station(fix.station)
-            fix.station = "%s.%s" % (fix.station,
-                                     time.strftime("%Y%m%d%H%M%S"))
+            fix.station = f"{fix.station}.{time.strftime('%Y%m%d%H%M%S')}"
         else:
             source = self.stations_overlay
 
@@ -749,7 +756,7 @@ class MainApp(object):
         elif id == 0:
             msg = "Port connected"
 
-        print "[SESSION %i]: %s" % (id, msg)
+        print(f"[SESSION {id}]: {msg}")
 
         event = main_events.SessionEvent(id, port, msg)
         self.mainwindow.tabs["event"].event(event)
@@ -777,13 +784,11 @@ class MainApp(object):
         if port:
             id = "%s_%s" % (id, port)
 
-        print "[NEWFORM %s]: %s" % (id, fn)
+        print(f"[NEWFORM {id}]: {fn}")
         f = formgui.FormFile(fn)
 
-        msg = '%s "%s" %s %s' % (_("Message"),
-                                 f.get_subject_string(),
-                                 _("received from"),
-                                 f.get_sender_string())
+        msg = f'{_("Message")} "{f.get_subject_string()}" {_("received from")} {f.get_sender_string()}'
+                                
 
         myc = self.config.get("user", "callsign")
         dst = f.get_path_dst()
@@ -796,12 +801,7 @@ class MainApp(object):
         bounce = "@" in src and "@" in dst
         isseen = myc in f.get_path()[:-1]
 
-        print "Decision: " + \
-            "fwd:%s " % fwd_on + \
-            "sendable:%s " % is_dst + \
-            "next:%s " % nextst + \
-            "bounce:%s " % bounce + \
-            "seen:%s " % isseen
+        print(f"Decision: fwd:{fwd_on} sendable:{is_dst} next:{nextst} bounce:{bounce} seen:{isseen}")
 
         if fwd_on and is_dst and not bounce and not isseen:
             msg += " (%s %s)" % (_("forwarding to"), nextst)
@@ -831,7 +831,7 @@ class MainApp(object):
         self.msgrouter.form_xfer_done(fn, port, False)
         if port:
             id = "%s_%s" % (id, port)
-        print "[FORMSENT %s]: %s" % (id, fn)
+        print(f"[FORMSENT {id}]: {fn}")
         event = main_events.FormEvent(id, _("Message Sent"))
         event.set_as_final()
 
@@ -841,7 +841,7 @@ class MainApp(object):
     def __file_sent(self, object, id, fn, port=None):
         if port:
             id = "%s_%s" % (id, port)
-        print "[FILESENT %s]: %s" % (id, fn)
+        print(f"[FILESENT {id}]: {fn}")
         _fn = os.path.basename(fn)
         msg = '%s "%s" %s' % (_("File"), _fn, _("Sent"))
         event = main_events.FileEvent(id, msg)
@@ -882,15 +882,14 @@ class MainApp(object):
                 try:
                     object.connect(signal, handler, *args)
                 except Exception:
-                    print "Failed to attach signal %s" % signal
+                    print("Failed to attach signal {signal}")
                     raise
 
     def _announce_self(self):
-        print ("-" * 75)
-        print "D-RATS v%s starting at %s" % (version.DRATS_VERSION,
-                                             time.asctime())
-        print platform.get_platform()
-        print ("-" * 75)
+        print(("-" * 75))
+        print(f"D-RATS v{version.DRATS_VERSION} starting at {time.asctime()}")
+        print(platform.get_platform())
+        print(("-" * 75))
 
     def __init__(self, **args):
         self.handlers = {
@@ -1017,7 +1016,7 @@ class MainApp(object):
             try:
                 routeto, station, port = line.split()
             except Exception:
-                print "Line %i of %s not valid" % (lno, routes)
+                print(f"Line {lno} of {routes} not valid")
                 continue
 
             self.mainwindow.tabs["stations"].saw_station(station.upper(), port)
@@ -1031,7 +1030,7 @@ class MainApp(object):
                             "*",
                             ".lock*")
         for lock in glob.glob(path):
-            print "Removing stale message lock %s" % lock
+            print(f"Removing stale message lock {lock}")
             os.remove(lock)        
 
     def main(self):
@@ -1050,17 +1049,17 @@ class MainApp(object):
             except Exception:
                 needupd = True
             if not os.path.exists(user_fname) or needupd:
-                print "Installing dist form %s -> %s" % (fname, user_fname)
+                print(f"Installing dist form {fname} -> {user_fname}")
                 try:
                     shutil.copyfile(form, user_fname)
-                except Exception, e:
-                    print "FAILED: %s" % e
+                except Exception as e:
+                    print(f"FAILED: {s}")
 
         self.clear_all_msg_locks()
 
         if len(self.config.options("ports")) == 0 and \
                 self.config.has_option("settings", "port"):
-            print "Migrating single-port config to multi-port"
+            print("Migrating single-port config to multi-port")
 
             port = self.config.get("settings", "port")
             rate = self.config.get("settings", "rate")
@@ -1082,8 +1081,8 @@ class MainApp(object):
             self.plugsrv = pluginsrv.DRatsPluginServer()
             self.__connect_object(self.plugsrv.get_proxy())
             self.plugsrv.serve_background()
-        except Exception, e:
-            print "Unable to start plugin server: %s" % e
+        except Exception as e:
+            print(f"Unable to start plugin server: {e}")
             self.plugsrv = None
 
         self.load_static_routes()
@@ -1092,7 +1091,7 @@ class MainApp(object):
             self.msgrouter = msgrouting.MessageRouter(self.config)
             self.__connect_object(self.msgrouter)
             self.msgrouter.start()
-        except Exception, e:
+        except Exception as e:
             log_exception()
             self.msgrouter = None
 
@@ -1100,10 +1099,10 @@ class MainApp(object):
             gtk.main()
         except KeyboardInterrupt:
             pass
-        except Exception, e:
-            print "Got exception on close: %s" % e
+        except Exception as e:
+            print(f"Got exception on close: {e}")
 
-        print "Saving config..."
+        print("Saving config...")
         self.config.save()
 
         if self.config.getboolean("prefs", "dosignoff") and self.sm:

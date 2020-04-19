@@ -25,15 +25,16 @@ if __name__ == "__main__":
     import gettext
     lang = gettext.translation("D-RATS", localedir="./locale", languages=["en"])
     lang.install()
-    print sys.path
+    print(sys.path)
 
 import os
 import time
 
-import libxml2
-import gtk
-import gtk.glade
-import gobject
+#depr: The following 4 imports related only to GTK, which is being removed. 
+#import libxml2
+#import gtk
+#import gtk.glade
+#import gobject
 import subprocess
 
 from d_rats.ui.main_messages import MessagesTab
@@ -171,7 +172,7 @@ class MainWindow(MainWindowElement):
                 args.append("./d-rats_repeater")
             else:
                 args.append("d-rats_repeater")
-            print "Running proxy: %s" % str(args)
+            print(f"Running proxy: {str(args)}")
             p = subprocess.Popen(args)
 
         quit = self._wtree.get_widget("main_menu_quit")
@@ -326,7 +327,7 @@ if __name__ == "__main__":
     conf = config.DratsConfig(None)
 
     def test(chat, station, msg):
-        print "%s->%s" % (station, msg)
+        print(f"{station}->{msg}")
 
     chat = ChatTab(wtree, conf)
     chat.connect("user-sent-message", test)

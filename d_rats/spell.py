@@ -1,7 +1,27 @@
-import os
-import subprocess
+#import os
+#import subprocess
+from spellchecker import SpellChecker
 
-class Spelling:
+class Spelling():
+    def __init__(self):
+        self.spell = SpellChecker()
+
+    def lookup_word(self, w):
+        # returns a set, might need a list or tuple
+        return self.spell.candidates(w)
+
+    def test(self):
+        s = self.lookup_word("speling")
+        if "spelling" not in s:
+            print("Unable to validate first suggestion of `spelling'")
+            print(s[0])
+            return False
+ 
+        print(f"Tested spelling okay: {s}")
+        return True
+
+# Changing "Spelling" class to use pyspellchecker
+class Old_Spelling:
     def __open_aspell(self):
         kwargs = {}
         if subprocess._mswindows:
@@ -136,5 +156,5 @@ def prepare_TextBuffer(buf):
 if __name__ == "__main__":
     s = Spelling()
     print(s.lookup_word("speling"))
-    print(s.lookup_word("teh"))
-    print(s.lookup_word("foo"))
+    print(s.lookup_word("teh"))             # These days, not a spelling mistake :-)
+    print(s.lookup_word("foo"))             # These days, not a spelling mistake

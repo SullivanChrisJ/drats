@@ -17,8 +17,8 @@
 
 import re
 
-import gobject
-import gtk
+#import gobject
+#import gtk
 
 from d_rats import inputdialog, miscwidgets
 from d_rats import signals
