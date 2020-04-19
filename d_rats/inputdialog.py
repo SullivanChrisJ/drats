@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
+#import gtk
 
-from miscwidgets import make_choice
+from d_rats.miscwidgets import make_choice
 
 class TextInputDialog(gtk.Dialog):
     def respond_ok(self, *args):
@@ -96,7 +96,7 @@ class FieldDialog(gtk.Dialog):
         self.set_type_hint(gtk.gdk.WINDOW_TYPE_HINT_DIALOG)        
 
     def response(self, _):
-        print "Blocking response"
+        print("Blocking response")
         return
 
     def add_field(self, label, widget, validator=None, full=False):

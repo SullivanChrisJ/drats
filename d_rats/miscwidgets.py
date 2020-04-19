@@ -14,13 +14,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import gtk
-import gobject
-import pango
+#import gtk
+#import gobject
+#import pango
 
 import os
 
-import platform
+from d_rats import platform
 
 class KeyedListWidget(gtk.HBox):
     __gsignals__ = {
@@ -75,7 +75,7 @@ class KeyedListWidget(gtk.HBox):
                 rend.connect("toggled", self._toggle, colnum)
                 column = gtk.TreeViewColumn(cap, rend, active=colnum)
             else:
-                raise Exception("Unsupported type %s" % typ)
+                raise Exception(f"Unsupported type {typ}")
             
             column.set_sort_column_id(colnum)
             self.__view.append_column(column)
@@ -125,8 +125,8 @@ class KeyedListWidget(gtk.HBox):
         try:
             (store, iter) = self.__view.get_selection().get_selected()
             return store.get(iter, 0)[0]
-        except Exception, e:
-            print "Unable to find selected: %s" % e
+        except Exception as e:
+            print(f"Unable to find selected: {e}")
             return None
 
     def select_item(self, key):
@@ -255,7 +255,7 @@ class ListWidget(gtk.HBox):
                 rend.connect("toggled", self._toggle, index)
                 column = gtk.TreeViewColumn(_col, rend, active=index)
             else:
-                raise Exception("Unknown column type (%i)" % index)
+                raise Exception(f"Unknown column type ({index})")
 
             column.set_sort_column_id(index)
             self._view.append_column(column)
@@ -284,7 +284,7 @@ class ListWidget(gtk.HBox):
 
     def add_item(self, *vals):
         if len(vals) != self._ncols:
-            raise Exception("Need %i columns" % self._ncols)
+            raise Exception(f"Need {self._ncols} columns")
 
         args = []
         i = 0
@@ -311,8 +311,8 @@ class ListWidget(gtk.HBox):
         try:
             (lst, iter) = self._view.get_selection().get_selected()
             lst.remove(iter)
-        except Exception, e:
-            print "Unable to remove selected: %s" % e
+        except Exception as e:
+            print(f"Unable to remove selected: {e}")
 
     def get_selected(self, take_default=False):
         (lst, iter) = self._view.get_selection().get_selected()
@@ -333,7 +333,7 @@ class ListWidget(gtk.HBox):
                 target = lst.get_iter(pos-1)
             elif delta < 0:
                 target = lst.get_iter(pos+1)
-        except Exception, e:
+        except Exception as e:
             return False
 
         if target:
@@ -406,7 +406,7 @@ class TreeWidget(ListWidget):
 
     def add_item(self, parent, *vals):
         if len(vals) != self._ncols:
-            raise Exception("Need %i columns" % self._ncols)
+            raise Exception(f"Need {self._ncols} columns")
 
         if not parent:
             self._add_item(None, *vals)
@@ -415,7 +415,7 @@ class TreeWidget(ListWidget):
             if iter:
                 self._add_item(iter, *vals)
             else:
-                raise Exception("Parent not found: %s", parent)
+                raise Exception(f"Parent not found: {parent}")
 
     def _set_values(self, parent, vals):
         if isinstance(vals, dict):
@@ -429,7 +429,7 @@ class TreeWidget(ListWidget):
         elif isinstance(vals, tuple):
             self._add_item(parent, *vals)
         else:
-            print "Unknown type: %s" % vals
+            print(f"Unknown type: {vals}")
 
     def set_values(self, vals):
         self._store.clear()
@@ -623,8 +623,8 @@ class LatLonEntry(gtk.Entry):
             except:
                 try:
                     return self.parse_dms(string)
-                except Exception, e:
-                    print "DMS: %s" % e
+                except Exception as e:
+                    print(f"DMS: {e}")
 
         raise Exception("Invalid format")
 
@@ -772,9 +772,9 @@ def test():
 
     def print_val(entry):
         if entry.validate():
-            print "Valid: %s" % entry.value()
+            print(f"Valid: {entry.value()}")
         else:
-            print "Invalid"
+            print("Invalid")
     lle.connect("activate", print_val)
 
     lle.set_text("45 13 12")
@@ -784,7 +784,7 @@ def test():
     except KeyboardInterrupt:
         pass
 
-    print lst.get_values()
+    print(lst.get_values())
 
 if __name__ == "__main__":
     test()
